@@ -12,10 +12,10 @@ st.set_page_config(page_title="이 슈팅, 골이 될까?", page_icon="⚽", lay
 GOAL_COLOR = "#d62728"
 MISS_COLOR = "#9aa5b1"
 
-
+DATA_URL = "https://raw.githubusercontent.com/ayoonjung/worldcup-shots/refs/heads/main/worldcup2022_shots.csv"
 @st.cache_data
 def load_data():
-    return pd.read_csv("worldcup2022_shots.csv")
+    return pd.read_csv(DATA_URL)
 
 
 raw = load_data()
