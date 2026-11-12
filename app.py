@@ -333,3 +333,75 @@ def goal_probability(forward_m, side_m, is_header):
     X = pd.DataFrame({"distance": [distance], "angle": [angle], "header": [int(is_header)]})
     return model_b.predict_proba(X)[0, 1], x, y, distance, angle
 
+def page_calc():
+    st.header("5. 골 확률 계산기와 한국 경기 분석")
+    st.subheader("골 확률 계산기(모델 B)")
+    c1, c2 = st.columns([2, 3])
+    with c1:
+        forward = st.slider("골라인에서 떨어진 거리(m)", 0.5, 35.0, 11.0, 0.5)
+        side = st.slider("골대 가운데에서 옆으로 떨어진 거리(m)", 0.0, 30.0, 0.0, 0.5)
+        part = st.radio("슈팅한 몸 부위", ["발", "머리"], horizontal=True)
+        p, x, y, dist, ang = goal_probability(forward, side, part == "머리")
+        st.metric("골이 될 확률", f"{p:.1%}")
+        st.write(f"골대까지 거리 {dist:.1f} m, 골대를 바라보는 각도 {ang:.1f}°")
+    with c2:
+        fig = pitch_figure(height=430)
+        fig.add_trace(go.Scatter(x=[y], y=[x], mode="markers", name="슈팅 위치",
+                                 marker=dict(color=GOAL_COLOR, size=14, symbol="x")))
+        st.plotly_chart(fig)
+
+    st.subheader("한국 대표팀 4경기: 슈팅 수와 기대 득점(확률 합)")
+    korea_ids = raw.loc[raw["team"] == KOREA, "match_id"].unique()
+    match_of = {opp: raw[(raw["team"] == opp) & raw["match_id"].isin(korea_ids)]["match_id"].iloc[0] for opp in OPPONENTS}
+    rows = []
+    for opp, label in OPPONENTS.items():
+        mid = match_of[opp]
+        ingame = raw[(raw["match_id"] == mid) & (raw["period"] < 5)]
+        score = f"{(ingame[ingame['team'] == KOREA]['outcome'] == 'Goal').sum()} : {(ingame[ingame['team'] == opp]['outcome'] == 'Goal').sum()}"
+        for team in [KOREA, opp]:
+            g = shots[(shots["match_id"] == mid) & (shots["team"] == team)]
+            rows.append([f"{label} {KOREAN_NAMES[opp]}", score, "한국" if team == KOREA else KOREAN_NAMES[opp], len(g), int(g["goal"].sum()),
+                         f"{g['prob'].sum():.2f}", f"{g['prob'].mean():.3f}"])
+    st.table(pd.DataFrame(rows, columns=["경기", "점수(한국 : 상대)", "팀", "슈팅 수", "골", "기대 득점(확률 합)", "슈팅 하나당 평균 확률"]),
+             hide_index=True)
+    st.caption("슈팅 수·골·기대 득점은 오픈 플레이 슈팅만 센 값입니다. 점수는 페널티킥 등을 포함한 실제 점수입니다.")
+
+    g = shots[shots["match_id"] == match_of["Ghana"]]
+    fig = pitch_figure(height=470)
+    for team, color in [(KOREA, "#1f77b4"), ("Ghana", "#ff7f0e")]:
+        t = g[g["team"] == team]
+        fig.add_trace(go.Scatter(x=t["y"], y=t["x"], mode="markers", name="한국" if team == KOREA else "가나",
+                                 marker=dict(color=color, size=8 + 40 * t["prob"], opacity=0.75,
+                                             line=dict(color=np.where(t["goal"] == 1, "black", "white"), width=2)),
+                                 text=t["player"] + "  골 확률 " + (t["prob"] * 100).round(1).astype(str) + "%"))
+    fig.update_layout(title="한국 대 가나 슈팅 지도(원이 클수록 골 확률이 높음, 검은 테두리 = 골)")
+    st.plotly_chart(fig)
+
+    st.subheader("한 경기 슈팅 수와 기대 득점 가운데 어느 쪽이 실제 골 수와 더 잘 맞을까?")
+    games = shots.groupby(["match_id", "team"]).agg(슈팅수=("goal", "size"), 기대득점=("prob", "sum"), 골수=("goal", "sum")).reset_index()
+    compare = pd.DataFrame(
+        [["슈팅 수", f"{games['슈팅수'].corr(games['골수']):.2f}"], ["기대 득점(확률 합)", f"{games['기대득점'].corr(games['골수']):.2f}"]],
+        columns=["한 경기에서 센 값", "실제 골 수와의 상관계수"],
+    )
+    st.table(compare, hide_index=True)
+    st.write(f"팀·경기 {len(games)}개로 계산했습니다.")
+
+    st.subheader("StatsBomb 기대 득점과 비교")
+    r = shots["prob"].corr(shots["statsbomb_xg"])
+    fig = px.scatter(shots, x="statsbomb_xg", y="prob", opacity=0.4)
+    fig.update_layout(height=380, xaxis_title="StatsBomb 기대 득점", yaxis_title="모델 B 골 확률")
+    st.plotly_chart(fig)
+    st.write(f"슈팅 {len(shots):,}개에서 두 값의 상관계수는 {r:.2f}입니다.")
+
+
+# ── 페이지 고르기 ──
+st.title("이 슈팅, 골이 될까?")
+st.caption("2022 카타르 월드컵 64경기 슈팅 데이터로 골이 될 확률 예측하기 · 데이터: StatsBomb Open Data")
+pages = [
+    st.Page(page_data, title="1. 데이터 살펴보기", url_path="data", default=True),
+    st.Page(page_eda, title="2. 전처리와 시각화", url_path="eda"),
+    st.Page(page_model, title="3. 모델 만들기", url_path="model"),
+    st.Page(page_eval, title="4. 모델 평가", url_path="evaluate"),
+    st.Page(page_calc, title="5. 골 확률 계산기", url_path="calculator"),
+]
+st.navigation(pages).run()
