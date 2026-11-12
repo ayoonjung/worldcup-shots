@@ -409,6 +409,6 @@ pages = [
     st.Page(page_model, title="3. 모델 만들기", url_path="model"),
     st.Page(page_eval, title="4. 모델 평가", url_path="evaluate"),
     st.Page(page_calc, title="5. 골 확률 계산기", url_path="calculator"),
-]
+    ]
 st.navigation(pages).run()
 
