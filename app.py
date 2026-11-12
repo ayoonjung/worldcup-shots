@@ -21,7 +21,6 @@ def load_data():
 raw = load_data()
 
 
-# ── 1차시: 데이터 살펴보기 ──
 COLUMN_INFO = pd.DataFrame(
     [
         ["match_id", "경기 고유 번호(64경기)"],
@@ -64,7 +63,6 @@ def page_data():
     st.write(f"전체 슈팅 {len(raw):,}개 가운데 골은 {goal_n}개입니다(승부차기 포함).")
 
 
-# ── 2차시: 전처리와 시각화 ──
 def prepare(data):
     d = data[data["period"] < 5]                      # 승부차기 제외
     d = d[d["shot_type"] == "Open Play"].copy()       # 페널티킥·프리킥·코너킥 직접 슈팅 제외
@@ -195,7 +193,6 @@ def page_eda():
     st.write(f"팀·경기 {len(games)}개에서 슈팅 수와 골 수의 상관계수는 {r:.2f}입니다.")
 
 
-# ── 3차시: 모델 만들기 ──
 FEATURES_A = ["distance"]
 FEATURES_B = ["distance", "angle", "header"]
 NAMES = {"distance": "거리(m)", "angle": "각도(°)", "header": "머리(1)"}
@@ -247,7 +244,6 @@ def page_model():
     st.plotly_chart(fig)
 
 
-# ── 4차시: 모델 평가 ──
 def evaluate(model, features, threshold):
     prob = model.predict_proba(test[features])[:, 1]
     pred = (prob >= threshold).astype(int)
@@ -323,7 +319,6 @@ def page_eval():
              hide_index=True)
 
 
-# ── 5차시: 골 확률 계산기와 한국 경기 분석 ──
 KOREA = "South Korea"
 OPPONENTS = {"Uruguay": "조별리그 1차전", "Ghana": "조별리그 2차전", "Portugal": "조별리그 3차전", "Brazil": "16강"}
 KOREAN_NAMES = {"Uruguay": "우루과이", "Ghana": "가나", "Portugal": "포르투갈", "Brazil": "브라질"}
@@ -400,7 +395,6 @@ def page_calc():
     st.write(f"슈팅 {len(shots):,}개에서 두 값의 상관계수는 {r:.2f}입니다.")
 
 
-# ── 페이지 고르기 ──
 st.title("이 슈팅, 골이 될까?")
 st.caption("2022 카타르 월드컵 64경기 슈팅 데이터로 골이 될 확률 예측하기 · 데이터: StatsBomb Open Data")
 pages = [
