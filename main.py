@@ -8,6 +8,17 @@ from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, r
 from sklearn.model_selection import train_test_split
 
 st.set_page_config(page_title="이 슈팅, 골이 될까?", page_icon="⚽", layout="wide")
+def main():
+    st.title("이 슈팅, 골이 될까?")
+    st.caption("2022 카타르 월드컵 64경기 슈팅 데이터로 골이 될 확률 예측하기 · 데이터: StatsBomb Open Data")
+    pages = [
+        st.Page(page_data, title="1. 데이터 살펴보기", url_path="data", default=True),
+        st.Page(page_eda, title="2. 전처리와 시각화", url_path="eda"),
+        st.Page(page_model, title="3. 모델 만들기", url_path="model"),
+        st.Page(page_eval, title="4. 모델 평가", url_path="evaluate"),
+        st.Page(page_calc, title="5. 골 확률 계산기", url_path="calculator"),
+    ]
+    st.navigation(pages).run()
 
 GOAL_COLOR = "#d62728"
 MISS_COLOR = "#9aa5b1"
@@ -392,16 +403,3 @@ def page_calc():
     fig.update_layout(height=380, xaxis_title="StatsBomb 기대 득점", yaxis_title="모델 B 골 확률")
     st.plotly_chart(fig)
     st.write(f"슈팅 {len(shots):,}개에서 두 값의 상관계수는 {r:.2f}입니다.")
-
-
-# ── 페이지 고르기 ──
-st.title("이 슈팅, 골이 될까?")
-st.caption("2022 카타르 월드컵 64경기 슈팅 데이터로 골이 될 확률 예측하기 · 데이터: StatsBomb Open Data")
-pages = [
-    st.Page(page_data, title="1. 데이터 살펴보기", url_path="data", default=True),
-    st.Page(page_eda, title="2. 전처리와 시각화", url_path="eda"),
-    st.Page(page_model, title="3. 모델 만들기", url_path="model"),
-    st.Page(page_eval, title="4. 모델 평가", url_path="evaluate"),
-    st.Page(page_calc, title="5. 골 확률 계산기", url_path="calculator"),
-]
-st.navigation(pages).run()
